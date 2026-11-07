@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.email == '__OWNER_EMAIL__'
+        && request.auth.token.email_verified == true;
+    }
+    match /users/{uid}/workspaces/main {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.revision == 0;
+      allow update: if isOwner(uid)
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+  }
+}

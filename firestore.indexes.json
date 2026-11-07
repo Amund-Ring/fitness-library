@@ -1,0 +1,9 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "workspaces", "fieldPath": "exercises", "indexes": [] },
+    { "collectionGroup": "workspaces", "fieldPath": "placements", "indexes": [] },
+    { "collectionGroup": "workspaces", "fieldPath": "episodes", "indexes": [] },
+    { "collectionGroup": "workspaces", "fieldPath": "events", "indexes": [] }
+  ]
+}
