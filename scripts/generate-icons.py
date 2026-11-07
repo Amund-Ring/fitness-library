@@ -28,5 +28,5 @@ def icon(size, filename):
     data=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',size,size,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(b''.join(rows)))+chunk(b'IEND',b'')
     Path('public',filename).write_bytes(data)
 
-for size,name in [(180,'apple-touch-icon.png'),(192,'pwa-192.png'),(512,'pwa-512.png'),(512,'pwa-maskable.png')]:
+for size,name in [(32,'favicon-blue.png'),(180,'apple-touch-icon.png'),(192,'pwa-192.png'),(512,'pwa-512.png'),(512,'pwa-maskable.png')]:
     icon(size,name)

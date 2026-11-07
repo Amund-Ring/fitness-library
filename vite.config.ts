@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['icon.svg', 'favicon-blue.svg', 'favicon-blue.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Fitness Library',
         short_name: 'Fitness Library',
