@@ -1,6 +1,24 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
+test('chosen rotation starts are displayed, recorded and undoable', async ({ page }) => {
+  await page.goto('/rotations?preview=1');
+  await expect(page.locator('.membership-list')).toContainText('Start unknown');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Set unknown starts to today', exact: true }).click();
+  await expect(page.locator('.membership-list button')).toHaveCount(20);
+  await expect(page.locator('.membership-list')).not.toContainText('Start unknown');
+  await expect(page.locator('.membership-list button').first()).toContainText('Started');
+  await expect(page.locator('.timeline-event').first()).toContainText(
+    'start date for 20 current exercises',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Set unknown starts to today', exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.locator('.membership-list')).toContainText('Start unknown');
+});
+
 test('desktop drag handles support keyboard reorder and cross-workout swap', async ({
   page,
 }, info) => {
@@ -35,6 +53,9 @@ test('workout layout and explicit swap preserve five slots and support undo', as
 }, info) => {
   await page.goto('/workouts?preview=1');
   await expect(page.getByRole('heading', { name: 'Workouts', exact: true })).toBeVisible();
+  await expect(
+    page.locator('.app-header').getByRole('button', { name: 'Undo', exact: true }),
+  ).toBeDisabled();
   if (info.project.name === 'mobile') {
     await expect(page.locator('#workout-A')).toBeVisible();
     await expect(page.locator('#workout-B')).toBeHidden();
@@ -52,8 +73,21 @@ test('workout layout and explicit swap preserve five slots and support undo', as
   await page.getByRole('button', { name: 'Confirm swap', exact: true }).click();
   await expect(page.locator('#workout-A h4').first()).toHaveText('Squat');
   await expect(page.locator('#workout-A .count')).toHaveText('5/5');
+  await expect(
+    page.locator('.app-header').getByRole('button', { name: 'Undo', exact: true }),
+  ).toBeEnabled();
+  await expect(page.locator('.toast')).toHaveCount(0);
+  await expect(page.locator('.cloud-status')).toHaveAttribute('aria-label', 'Preview', {
+    timeout: 5000,
+  });
+  await expect(
+    page.locator('.app-header').getByRole('button', { name: 'Undo', exact: true }),
+  ).toBeEnabled();
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.locator('#workout-A h4').first()).toHaveText('Lat Pulldown Machine');
+  await expect(
+    page.locator('.app-header').getByRole('button', { name: 'Undo', exact: true }),
+  ).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 

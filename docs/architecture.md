@@ -10,7 +10,7 @@ Each write increments `revision`. A transaction checks the expected server revis
 
 Firestore has a document-size limit; the app applies a conservative **750 KB serialized-state guard** and record-count bounds. It refuses oversized imports/writes instead of trimming history. If the library eventually outgrows that, move older events/episodes to subcollections. This is not a general-purpose sync framework.
 
-Original membership start dates are `null`, with `observedActiveAt: "2026-11-07"`. Moving between A–D does not restart membership. Removing closes the episode; returning starts a new one. Archive preserves identities and historical references. Undo is scoped to the latest local change and becomes unavailable if a different device advances the revision.
+Imported membership start dates are initially `null`, with `observedActiveAt: "2026-11-07"`. When the user explicitly chooses a tracking start, unknown current starts can be set to today without modifying known dates or completed episodes. The choice is logged and undoable. Moving between A–D does not restart membership. Removing closes the episode; returning starts a new one. Archive preserves identities and historical references. Undo is scoped to the latest local change and becomes unavailable if a different device advances the revision.
 
 ## Offline and privacy behavior
 

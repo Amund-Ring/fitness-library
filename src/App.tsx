@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import {
   ArrowRight,
   BookOpen,
+  Check,
   CircleHelp,
   Cloud,
   CloudOff,
@@ -41,6 +42,8 @@ export default function App() {
   const [modal, setModal] = useState<Modal | null>(null);
   const [loginBusy, setLoginBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const noticeTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
   const fileRef = useRef<HTMLInputElement>(null);
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -68,7 +71,8 @@ export default function App() {
     const ok = await lib.commit(action);
     if (ok) {
       setNotice(preview ? 'Preview updated · changes are not saved' : 'Saved to your library');
-      setTimeout(() => setNotice(''), 3500);
+      window.clearTimeout(noticeTimer.current);
+      noticeTimer.current = window.setTimeout(() => setNotice(''), 3000);
     }
     return ok;
   }
@@ -193,29 +197,65 @@ export default function App() {
         <div className="header-actions">
           <span
             className={`cloud-status ${!lib.online ? 'is-offline' : ''}`}
+            role="status"
+            aria-label={
+              notice ||
+              (preview
+                ? 'Preview'
+                : !lib.online
+                  ? 'Offline'
+                  : busy
+                    ? 'Saving'
+                    : lib.verified
+                      ? 'Cloud saved'
+                      : 'Connecting')
+            }
             title={
-              preview
+              notice ||
+              (preview
                 ? 'Sample data'
                 : !lib.online
                   ? 'Offline — viewing saved data'
                   : lib.verified
                     ? 'Cloud connected'
-                    : 'Connecting to cloud'
+                    : 'Connecting to cloud')
             }
           >
-            {lib.online ? <Cloud size={16} /> : <CloudOff size={16} />}
+            {notice ? (
+              <Check size={16} />
+            ) : lib.online ? (
+              <Cloud size={16} />
+            ) : (
+              <CloudOff size={16} />
+            )}
             <span>
-              {preview
-                ? 'Preview'
-                : !lib.online
-                  ? 'Offline'
-                  : busy
-                    ? 'Saving…'
-                    : lib.verified
-                      ? 'Cloud saved'
-                      : 'Connecting…'}
+              {notice
+                ? preview
+                  ? 'Preview updated'
+                  : 'Saved'
+                : preview
+                  ? 'Preview'
+                  : !lib.online
+                    ? 'Offline'
+                    : busy
+                      ? 'Saving…'
+                      : lib.verified
+                        ? 'Cloud saved'
+                        : 'Connecting…'}
             </span>
           </span>
+          <button
+            className="toolbar-undo"
+            aria-label="Undo"
+            title={lib.undo ? 'Undo last change' : 'Nothing to undo'}
+            disabled={!lib.undo || busy || !canEdit}
+            onClick={() => {
+              if (lib.undo) void commit({ type: 'undo', previous: lib.undo.previous });
+            }}
+          >
+            <Undo2 size={16} aria-hidden="true" />
+            <span>Undo</span>
+          </button>
           <button
             className="icon-button data-menu"
             aria-label="Data and account"
@@ -270,7 +310,15 @@ export default function App() {
               />
               <Route
                 path="/rotations"
-                element={<RotationsView state={state} onDetail={detail} />}
+                element={
+                  <RotationsView
+                    state={state}
+                    onDetail={detail}
+                    editable={canEdit}
+                    busy={busy}
+                    onSetStarts={() => commit({ type: 'start-today' }, state.revision)}
+                  />
+                }
               />
               <Route path="*" element={<Navigate to={`/workouts${suffix}`} replace />} />
             </Routes>
@@ -425,19 +473,6 @@ export default function App() {
             </button>
           </div>
         </Dialog>
-      )}
-      {(notice || lib.undo) && (
-        <div className="toast" role="status">
-          <span>{notice || 'Your last change can be undone.'}</span>
-          {lib.undo && (
-            <button
-              disabled={busy || !canEdit}
-              onClick={() => void commit({ type: 'undo', previous: lib.undo!.previous })}
-            >
-              <Undo2 size={15} /> Undo
-            </button>
-          )}
-        </div>
       )}
       {needRefresh && (
         <div className="update-prompt" role="status">

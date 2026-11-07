@@ -30,7 +30,7 @@ All screenshots show the built-in sample library, not account data.
 - Color-coded muscle categories and A–D workout badges.
 - Search, grouping, and visible filters; green checks identify exercises already in the program.
 - Simple exercise editing, archive/restore, notes, and optional cardio finishers.
-- Rotation history, review reminders, and undo.
+- Rotation history, review reminders, and Undo in the top-right toolbar. Save confirmations appear briefly in the header; no floating overlay covers the library.
 - Google sign-in and cloud saving across devices, with revision checks for conflicting edits.
 - Installable PWA with offline viewing and versioned JSON backup/restore.
 

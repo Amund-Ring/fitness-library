@@ -8,13 +8,20 @@ function age(start: string) {
 export function RotationsView({
   state,
   onDetail,
+  editable,
+  busy,
+  onSetStarts,
 }: {
   state: Workspace;
   onDetail: (id: string) => void;
+  editable: boolean;
+  busy: boolean;
+  onSetStarts: () => Promise<boolean>;
 }) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
   const [count, setCount] = useState(30);
+  const unknownCount = state.episodes.filter((ep) => !ep.endedAt && !ep.startedAt).length;
   const due = state.episodes.filter(
     (ep) =>
       !ep.endedAt &&
@@ -145,8 +152,26 @@ export function RotationsView({
         <section className="membership-panel">
           <h2>Time in rotation</h2>
           <p className="detail-note">
-            Time since an exercise was added. Original start dates are unknown.
+            Time since each exercise was added to the rotation.
+            {unknownCount > 0 && ` ${unknownCount} start dates are unknown.`}
           </p>
+          {unknownCount > 0 && (
+            <button
+              className="text-button"
+              disabled={!editable || busy}
+              onClick={() => {
+                const today = new Date().toLocaleDateString('en-GB', { dateStyle: 'long' });
+                if (
+                  window.confirm(
+                    `Use today, ${today}, as the start date for ${unknownCount} current exercises with unknown starts? This sets a starting point for tracking; it does not change past membership records.`,
+                  )
+                )
+                  void onSetStarts();
+              }}
+            >
+              Set unknown starts to today
+            </button>
+          )}
           <div className="membership-list">
             {state.placements.map((p) => {
               const e = state.exercises.find((e) => e.id === p.exerciseId)!;
@@ -156,7 +181,11 @@ export function RotationsView({
                 <button key={e.id} onClick={() => onDetail(e.id)}>
                   <span>
                     <strong>{e.name}</strong>
-                    <small>Workout {p.workoutId}</small>
+                    <small>
+                      Workout {p.workoutId}
+                      {ep.startedAt &&
+                        ` · Started ${new Date(ep.startedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                    </small>
                   </span>
                   <span className={due.some((x) => x.exerciseId === e.id) ? 'review-due' : ''}>
                     {weeks === null

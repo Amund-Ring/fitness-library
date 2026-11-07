@@ -163,6 +163,35 @@ describe('rotation operations', () => {
     expect(() => validateWorkspace(bad)).toThrow();
   });
 });
+describe('chosen start dates', () => {
+  it('sets current unknown starts to today and can undo without losing the original observation', () => {
+    const original = createSeed(now);
+    const next = applyAction(original, { type: 'start-today' }, now);
+    expect(next.episodes.every((ep) => ep.startedAt === now)).toBe(true);
+    expect(next.episodes.every((ep) => ep.observedActiveAt === '2026-11-07')).toBe(true);
+    expect(next.placements).toEqual(original.placements);
+    expect(next.events.at(-1)?.exerciseIds).toHaveLength(20);
+    const undone = applyAction(next, { type: 'undo', previous: original }, now);
+    expect(undone.episodes).toEqual(original.episodes);
+  });
+  it('preserves known starts and completed membership episodes', () => {
+    const original = applyAction(createSeed(now), { type: 'remove', exerciseId: 'ex01' }, now);
+    original.episodes.find((ep) => ep.exerciseId === 'ex02')!.startedAt =
+      '2026-10-01T12:00:00.000Z';
+    const next = applyAction(original, { type: 'start-today' }, now);
+    expect(next.episodes.find((ep) => ep.exerciseId === 'ex01')).toEqual(
+      original.episodes.find((ep) => ep.exerciseId === 'ex01'),
+    );
+    expect(next.episodes.find((ep) => ep.exerciseId === 'ex02')?.startedAt).toBe(
+      '2026-10-01T12:00:00.000Z',
+    );
+    expect(next.events.at(-1)?.exerciseIds).toHaveLength(18);
+    expect(() => applyAction(next, { type: 'start-today' }, now)).toThrow(
+      'already have a start date',
+    );
+  });
+});
+
 describe('portable backups', () => {
   it('round trips all records including unknown dates and history', () => {
     const s = applyAction(createSeed(now), { type: 'remove', exerciseId: 'ex01' }, now);

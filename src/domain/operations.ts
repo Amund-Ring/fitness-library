@@ -25,6 +25,7 @@ export type Action =
   | { type: 'restore'; exerciseId: string }
   | { type: 'undo'; previous: Workspace }
   | { type: 'import'; imported: Workspace }
+  | { type: 'start-today' }
   | { type: 'settings'; reviewWeeks: number };
 
 function protectStaple(s: Workspace, id: string, confirmed?: boolean) {
@@ -170,6 +171,20 @@ export function applyAction(
       kind = 'import';
       description =
         'Restored a versioned JSON backup. Previous state was offered as a backup before restore.';
+      break;
+    }
+    case 'start-today': {
+      const currentIds = new Set(s.placements.map((p) => p.exerciseId));
+      const unknown = s.episodes.filter(
+        (ep) => !ep.endedAt && !ep.startedAt && currentIds.has(ep.exerciseId),
+      );
+      if (!unknown.length) throw new Error('All current exercises already have a start date.');
+      ids = unknown.map((ep) => ep.exerciseId);
+      s.episodes = s.episodes.map((ep) =>
+        unknown.some((item) => item.id === ep.id) ? { ...ep, startedAt: now } : ep,
+      );
+      kind = 'settings';
+      description = `Set ${new Date(now).toLocaleDateString('en-GB', { dateStyle: 'long' })} as the start date for ${unknown.length} current exercises, by choice.`;
       break;
     }
     case 'settings':
